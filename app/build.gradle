@@ -1,0 +1,19 @@
+apply plugin: 'application'
+ 
+project.ext.lwjglVersion = "3.1.6"
+project.ext.lwjglNatives = "natives-windows"
+ 
+dependencies {
+    compile project(':core')
+    compile project(':mandelbrot')
+    
+	compile "org.lwjgl:lwjgl:$lwjglVersion"
+	compile "org.lwjgl:lwjgl-opengl:$lwjglVersion"
+	compile "org.lwjgl:lwjgl-glfw:$lwjglVersion"
+	
+	compile "org.lwjgl:lwjgl:$lwjglVersion:$lwjglNatives"
+	compile "org.lwjgl:lwjgl-glfw:$lwjglVersion:$lwjglNatives"
+	compile "org.lwjgl:lwjgl-opengl:$lwjglVersion:$lwjglNatives"
+}
+ 
+mainClassName = 'de.buffalodan.fractal.app.DesktopApp'
