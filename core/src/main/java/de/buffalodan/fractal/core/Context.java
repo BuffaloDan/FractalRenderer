@@ -1,25 +1,48 @@
 package de.buffalodan.fractal.core;
 
 public class Context {
-	private int width;
-	private int height;
-	private Fractal fractal;
+    private int width;
+    private int height;
+    private Fractal fractal;
 
-	public Context(int width, int height, Fractal fractal) {
-		this.width = width;
-		this.height = height;
-		this.fractal = fractal;
-	}
+    private final int processesPerRow;
+    private final int processes;
 
-	public int getHeight() {
-		return height;
-	}
+    public Context(int width, int height, Fractal fractal, int processesPerRow) {
+        this.width = width;
+        this.height = height;
+        this.fractal = fractal;
+        this.processesPerRow = processesPerRow;
+        this.processes = processesPerRow * processesPerRow;
 
-	public int getWidth() {
-		return width;
-	}
+        fractal.init(this);
+    }
 
-	public Fractal getFractal() {
-		return fractal;
-	}
+    public int getHeight() {
+        return height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getBufferSize() {
+        return width * height;
+    }
+
+    public Fractal getFractal() {
+        return fractal;
+    }
+
+    public int getProcessesPerRow() {
+        return processesPerRow;
+    }
+
+    public int getProcesses() {
+        return processes;
+    }
+
+    public void dispose() {
+        fractal.dispose();
+    }
 }

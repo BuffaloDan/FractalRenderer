@@ -1,28 +1,17 @@
 package de.buffalodan.fractal.app;
 
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_R;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
-import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT;
-import static org.lwjgl.glfw.GLFW.GLFW_PRESS;
-import static org.lwjgl.glfw.GLFW.GLFW_REPEAT;
-import static org.lwjgl.glfw.GLFW.glfwCreateWindow;
-import static org.lwjgl.glfw.GLFW.glfwDestroyWindow;
-import static org.lwjgl.glfw.GLFW.glfwGetCursorPos;
-import static org.lwjgl.glfw.GLFW.glfwInit;
-import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
-import static org.lwjgl.glfw.GLFW.glfwPollEvents;
-import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
-import static org.lwjgl.glfw.GLFW.glfwSetKeyCallback;
-import static org.lwjgl.glfw.GLFW.glfwSetMouseButtonCallback;
-import static org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose;
-import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
-import static org.lwjgl.glfw.GLFW.glfwTerminate;
-import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
+import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferInt;
+import java.awt.image.DirectColorModel;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -31,6 +20,7 @@ import java.nio.DoubleBuffer;
 
 import javax.imageio.ImageIO;
 
+import de.buffalodan.fractal.mandelbrot.MandelbrotCLFractal;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
@@ -39,7 +29,6 @@ import org.lwjgl.opengl.GL;
 
 import de.buffalodan.fractal.core.Context;
 import de.buffalodan.fractal.core.FractalRenderer;
-import de.buffalodan.fractal.mandelbrot.MandelbrotFractal;
 
 public class DesktopApp extends FractalRenderer {
 
@@ -61,41 +50,52 @@ public class DesktopApp extends FractalRenderer {
 	}
 
 	public static void main(String[] args) {
-		Context desktopContext = new Context(800, 800, new MandelbrotFractal());
+		Context desktopContext = new Context(800, 800, new MandelbrotCLFractal(), 1);
 		new DesktopApp(desktopContext).start();
 	}
 
-	private void screenshot() {
-		glReadBuffer(GL_FRONT);
-		int width = context.getWidth();
-		int height= context.getHeight();
-		int bpp = 4; // Assuming a 32-bit display with a byte each for red, green, blue, and alpha.
-		ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * bpp);
-		glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, buffer );
-		
-		File file = new File("test.png"); // The file to save to.
+	private void screenshot(int[] data) {
+		String fileName = "test";
+		int i = 0;
+		File file; // The file to save to.
 		String format = "PNG"; // Example: "PNG" or "JPG"
-		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		   
-		for(int x = 0; x < width; x++) 
-		{
-		    for(int y = 0; y < height; y++)
-		    {
-		        int i = (x + (width * y)) * bpp;
-		        int r = buffer.get(i) & 0xFF;
-		        int g = buffer.get(i + 1) & 0xFF;
-		        int b = buffer.get(i + 2) & 0xFF;
-		        image.setRGB(x, height - (y + 1), (0xFF << 24) | (r << 16) | (g << 8) | b);
-		    }
+
+		while ((file = new File(fileName + (i++) + ".png")).exists()) {
 		}
-		   
+
+		int width = context.getWidth();
+		int height = context.getHeight();
+
+		ColorModel colorModel = new DirectColorModel(32,
+                0x000000ff,       // Red
+                0x0000ff00,       // Green
+                0x00ff0000,       // Blue
+                0xff000000        // Alpha
+                );
+		SampleModel sampleModel = colorModel.createCompatibleSampleModel(width, height);
+		DataBuffer buffer = new DataBufferInt(data, width * height);
+		WritableRaster raster = Raster.createWritableRaster(sampleModel, buffer, null);
+		BufferedImage image = new BufferedImage(colorModel, raster, false, null);
 		try {
-		    ImageIO.write(image, format, file);
-		} catch (IOException e) { e.printStackTrace(); }
+			ImageIO.write(image, format, file);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
-	@Override
-	protected void initGL() {
+    @Override
+    protected void init() {
+	    initGL();
+        super.init();
+    }
+
+    @Override
+    public void start() {
+        glfwFocusWindow(window);
+        super.start();
+    }
+
+    protected void initGL() {
 		glfwSetErrorCallback(errorCallback);
 		if (!glfwInit()) {
 			throw new IllegalStateException("Unable to initialize GLFW");
@@ -116,6 +116,12 @@ public class DesktopApp extends FractalRenderer {
 					updateFractal();
 				} else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS && !isFractalUpdating()) {
 					takeScreenshot = true;
+				} else if (key == GLFW_KEY_PAGE_UP && action == GLFW_PRESS && !isFractalUpdating()) {
+					context.getFractal().setMaxIterations(context.getFractal().getMaxIterations()+200);
+					updateFractal();
+				} else if (key == GLFW_KEY_PAGE_DOWN && action == GLFW_PRESS && !isFractalUpdating()) {
+					context.getFractal().setMaxIterations(context.getFractal().getMaxIterations()-200);
+					updateFractal();
 				}
 			}
 		};
@@ -155,7 +161,7 @@ public class DesktopApp extends FractalRenderer {
 		glfwMakeContextCurrent(window);
 		GL.createCapabilities();
 
-		bbuffer = ByteBuffer.allocateDirect(getBufferSize()).order(ByteOrder.nativeOrder());
+		bbuffer = ByteBuffer.allocateDirect(getBufferSize() * 4).order(ByteOrder.nativeOrder());
 
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
@@ -164,21 +170,25 @@ public class DesktopApp extends FractalRenderer {
 
 	@Override
 	protected void dispose() {
+		context.dispose();
 		keyCallback.free();
+		mouseCallback.free();
 		glfwDestroyWindow(window);
 		glfwTerminate();
 		errorCallback.free();
 	}
 
 	@Override
-	protected void render(byte[] data) {
+	protected void render(int[] data) {
 		if (takeScreenshot) {
-			screenshot();
+			synchronized (data) {
+				screenshot(data.clone());
+			}
 			takeScreenshot = false;
 		}
 
 		synchronized (data) {
-			bbuffer.put(data).flip();
+			bbuffer.asIntBuffer().put(data).flip();
 		}
 		glViewport(0, 0, context.getWidth(), context.getHeight());
 		glClear(GL_COLOR_BUFFER_BIT);

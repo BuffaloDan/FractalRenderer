@@ -35,7 +35,7 @@ tmp/
 *.swp
 *~.nib
 local.properties
-.settings/
+**/.settings/
 .loadpath
 .recommenders
 
@@ -126,3 +126,9 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+#Idea
+*.iml
+.idea/
+**/out/
+.vscode/

@@ -2,16 +2,15 @@ package de.buffalodan.fractal.core;
 
 public abstract class FractalRenderer {
 	protected Context context;
-	private byte[] buffer;
+	private int[] buffer;
 	private boolean running;
 	private boolean updateFractal;
-	
-	private static final int PROCESSES = 8;
-	private int fractalUpdating = PROCESSES;
+
+	private int fractalUpdating;
 
 	public FractalRenderer(Context context) {
 		this.context = context;
-		buffer = new byte[context.getWidth() * context.getHeight() * 4];
+		buffer = new int[context.getWidth() * context.getHeight()];
 		init();
 	}
 
@@ -19,29 +18,32 @@ public abstract class FractalRenderer {
 		return buffer.length;
 	}
 
-	private void init() {
-		initGL();
+	protected void init() {
 		running = true;
 		updateFractal = true;
+		fractalUpdating = context.getProcesses();
 	}
 
 	public boolean isFractalUpdating() {
 		return fractalUpdating != 0;
 	}
 
-	protected abstract void initGL();
-
 	private void createFractal() {
-		for (int i = 0; i < PROCESSES; i++) {
-			final int c = i;
+		fractalUpdating = context.getProcesses();
+		for (int x = 0; x < context.getProcessesPerRow(); x++) {
+			for (int y = 0; y < context.getProcessesPerRow(); y++) {
+			final int xc = x;
+			final int yc = y;
 			Runnable updater = () -> {
-				int startX = context.getWidth() / PROCESSES * c;
-				int endX = c == PROCESSES - 1 ? context.getWidth() : context.getWidth() / PROCESSES * (c + 1);
-				context.getFractal().createFractal(buffer, startX, 0, endX, context.getHeight(), context.getWidth(), context.getHeight());
-				fractalUpdating++;
+				int startX = context.getWidth() / context.getProcessesPerRow() * xc;
+				int endX = xc == context.getProcessesPerRow() - 1 ? context.getWidth() : context.getWidth() / context.getProcessesPerRow() * (xc + 1);
+				int startY = context.getHeight() / context.getProcessesPerRow() * yc;
+				int endY = yc == context.getProcessesPerRow() - 1 ? context.getHeight() : context.getHeight() / context.getProcessesPerRow() * (yc + 1);
+				context.getFractal().createFractal(buffer, startX, startY, endX, endY, context.getWidth(), context.getHeight());
+				fractalUpdating--;
 			};
 			new Thread(updater).start();
-		}
+		}}
 	}
 
 	public void start() {
@@ -75,5 +77,5 @@ public abstract class FractalRenderer {
 
 	protected abstract void dispose();
 
-	protected abstract void render(byte[] data);
+	protected abstract void render(int[] data);
 }

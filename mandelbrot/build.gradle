@@ -1,3 +1,4 @@
 dependencies {
 	compile project(':core')
+	compile "org.lwjgl:lwjgl-opencl:$lwjglVersion"
 }

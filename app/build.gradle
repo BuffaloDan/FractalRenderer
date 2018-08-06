@@ -1,8 +1,5 @@
 apply plugin: 'application'
  
-project.ext.lwjglVersion = "3.1.6"
-project.ext.lwjglNatives = "natives-windows"
- 
 dependencies {
     compile project(':core')
     compile project(':mandelbrot')
@@ -17,3 +14,10 @@ dependencies {
 }
  
 mainClassName = 'de.buffalodan.fractal.app.DesktopApp'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+run{
+	standardInput = System.in
+}
