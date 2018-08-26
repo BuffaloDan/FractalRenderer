@@ -1,5 +1,10 @@
 project.ext.lwjglVersion = "3.2.0"
-project.ext.lwjglNatives = "natives-windows"
+if (project.hasProperty("os")) {
+    project.ext.lwjglNatives = "natives-$os"
+} else {
+    project.ext.lwjglNatives = "natives-windows"
+    project.ext.os = "windows"
+}
 
 subprojects {
     apply plugin: 'java'

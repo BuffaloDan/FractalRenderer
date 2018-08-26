@@ -21,3 +21,9 @@ targetCompatibility = 1.8
 run{
 	standardInput = System.in
 }
+
+distributions {
+    main {
+        baseName = "FractalRenderer_$os"
+    }
+}
